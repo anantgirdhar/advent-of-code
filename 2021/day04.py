@@ -47,27 +47,44 @@ def check_wins(marked_spots, mask):
     if board_indices.size == 0:
         return []
     else:
-        return board_indices.reshape(1).tolist()
+        return board_indices.flatten().tolist()
 
-def play_bingo(boards, numlist):
+def play_bingo(boards, numlist, return_last_win=False):
     """Check which bingo boards win with the numbers
 
     Given a list of numbers and some bingo boards, check which of them
     are complete.
+
+    If return_last_win is True, it returns information on the last board
+    to win instead of the first board to win.
     """
     # "MarK" all the spots that match any of the numbers in numlist. This will
     # create a copy of the boards with True wherever the the required numbers
     # are and False everywhere else.
     marked_spots = np.zeros(boards.shape, dtype=bool)
+    # Keep track of which boards have won (in case we want to return the last
+    # board to win).
+    previously_won_boards = set()
     for i, num in enumerate(numlist):
         marked_spots = marked_spots | (boards == num)
         # Now check if any of the boards have won by comparing against various masks
+        winning_boards = set()
         for mask in masks(boards.shape[1:]):  # Get the shape of just one board
-            winning_boards = check_wins(marked_spots, mask)
-            if len(winning_boards) > 0:
-                # There is a winning board!
+            winning_boards.update(check_wins(marked_spots, mask))
+        if len(winning_boards) > 0:
+            # There are winning boards!
+            if not return_last_win:
                 # Return the winning board indices with the marked number list
-                return (winning_boards, numlist[:i+1])
+                return (list(winning_boards), numlist[:i+1])
+            # Otherwise, check if all the boards have won
+            elif len(winning_boards) == boards.shape[0]:
+                # Figure out which board won last
+                return (
+                        list(winning_boards.difference(previously_won_boards)),
+                        numlist[:i+1],
+                        )
+            # Otherwise, add all these boards to the list of previously won boards
+            previously_won_boards = winning_boards
     return []
 
 def calculate_winning_board_score(board, marked_numbers):
@@ -131,6 +148,9 @@ def main(filename):
     winning_board_indices, marked_numbers = play_bingo(boards, numlist)
     winning_score = calculate_winning_board_score(boards[winning_board_indices[0]], marked_numbers)
     print(f'Winning board score = {winning_score}')
+    last_winning_board_index, marked_numbers = play_bingo(boards, numlist, return_last_win=True)
+    last_winning_score = calculate_winning_board_score(boards[last_winning_board_index[0]], marked_numbers)
+    print(f'Last winning board score = {last_winning_score}')
 
 if __name__ == "__main__":
     filename = sys.argv[1]
