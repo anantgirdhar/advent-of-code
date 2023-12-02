@@ -1,6 +1,26 @@
 """Day 02: Cube Conundrum"""
 
 import sys
+import math
+
+def find_minimum_cubes(games):
+    """Find the minimum number of cubes needed
+
+    The minimum number of cubes needed is the maximum of each color across all
+    subsets in a game.
+    """
+    minimum_cubes = []
+    for subsets in games.values():
+        minR, minG, minB = 0, 0, 0
+        for (R, G, B) in subsets:
+            if R > minR:
+                minR = R
+            if G > minG:
+                minG = G
+            if B > minB:
+                minB = B
+        minimum_cubes.append([minR, minG, minB])
+    return minimum_cubes
 
 def find_possible_games(games, maxR, maxG, maxB):
     """Find which games are possible
@@ -54,6 +74,11 @@ def main(filename):
     possible_games = find_possible_games(games, 12, 13, 14)
     # print(possible_games)
     print(f'Sum of possible games: {sum(possible_games)}')
+    minimum_cubes = find_minimum_cubes(games)
+    # Compute the "power" as the product of the number of cubes of each color
+    powers = [math.prod(m) for m in minimum_cubes]
+    # print(minimum_cubes)
+    print(f'Sum of powers of minimum sets: {sum(powers)}')
 
 if __name__ == "__main__":
     filename = sys.argv[1]
