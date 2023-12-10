@@ -27,6 +27,25 @@ def count_number_of_wins(card):
             num_winning_nums += 1
     return num_winning_nums
 
+def compute_number_of_scratchcards(cards):
+    """Compute the number of scratchcards won
+
+    This function takes in a list of lines representing the scratchcards and
+    computes how many total scratchcards are won (based on the rules given
+    behind each scratchcard). It then returns a list of how many of each
+    scratchcard were won.
+    """
+    # Start with 1 copy of every card (the original)
+    num_cards = [1, ] * len(cards)
+    # Idea: check how many wins each card produces and increment the count of
+    # the appropriate number of following cards
+    for i, card in enumerate(cards):
+        num_wins = count_number_of_wins(card)
+        num_cards_added = num_cards[i]
+        for j in range(i + 1, i + 1 + num_wins):
+            num_cards[j] += num_cards_added
+    return num_cards
+
 def compute_points(cards):
     """Compute points for each scratchcard
 
@@ -66,6 +85,8 @@ def main(filename):
     cards = parse_data(cards)
     points = compute_points(cards)
     print(f'Total points: {sum(points)}')
+    num_cards = compute_number_of_scratchcards(cards)
+    print(f'Total cards: {sum(num_cards)}')
 
 if __name__ == "__main__":
     filename = sys.argv[1]
