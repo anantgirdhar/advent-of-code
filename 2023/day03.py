@@ -1,6 +1,113 @@
 """Day 03: Gear Ratios"""
 
+import re
 import sys
+
+def compute_gear_ratio(idx, line, prev_line, next_line):
+    """Find the product of numbers touching a gear
+
+    A gear is a star (*) that has exactly two numbers touching it. This
+    function checks to see if the star (defined by the index idx) has exactly
+    two numbers touching it and, if so, will return the product of those two
+    numbers. If not, it will return None.
+    """
+    # This assumes that the line always has at least one character before and
+    # after idx.
+    numbers = []
+    # First check the current line to see if any numbers are touching it on the
+    # left side
+    if line[idx-1].isdigit():
+        # When we split on any non-digits, we can be sure that we are getting
+        # the entire number touching the star
+        num = re.split(r'\D', line[:idx])[-1]
+        # print(f'    > Found digit on left: {num}')
+        numbers.append(int(num))
+    # Now do the same for the right side
+    if line[idx+1].isdigit():
+        num = re.split(r'\D', line[idx+1:])[0]
+        # print(f'    > Found digit on right: {num}')
+        numbers.append(int(num))
+    # For the prev_line, if there is a digit directly above the star, then
+    # there is only one number touching it from the top. Otherwise, there
+    # might be two numbers that we can find
+    if prev_line:
+        if prev_line[idx].isdigit():
+            # Go back until you find a non-digit character or the start of the
+            # line
+            i = idx
+            while prev_line[i-1].isdigit():
+                i -= 1
+            # Now we can just split on non-digits and grab the entire number
+            num = re.split(r'\D', prev_line[i:])[0]
+            # print(f'    > Found digit directly above: {num}')
+            numbers.append(int(num))
+        else:
+            # If the digit directly above is not a digit, then we can just
+            # split prev_line into the left part and the right part. Each part
+            # can then be further split on non-digit characters. If the left
+            # half has a number touching the star, it will be the last entry in
+            # the split list. Similarly, if the right half has a number
+            # touching the star, it will be the first entry in the list.
+            num = re.split(r'\D', prev_line[:idx])[-1]
+            if num:
+                # print(f'    > Found digit NW: {num}')
+                numbers.append(int(num))
+            num = re.split(r'\D', prev_line[idx+1:])[0]
+            if num:
+                # print(f'    > Found digit NE: {num}')
+                numbers.append(int(num))
+    # Run a similar process for the next_line
+    if next_line:
+        if next_line[idx].isdigit():
+            i = idx
+            while next_line[i-1].isdigit():
+                i -= 1
+            num = re.split(r'\D', next_line[i:])[0]
+            # print(f'    > Found digit directly below: {num}')
+            numbers.append(int(num))
+        else:
+            num = re.split(r'\D', next_line[:idx])[-1]
+            if num:
+                # print(f'    > Found digit SW: {num}')
+                numbers.append(int(num))
+            num = re.split(r'\D', next_line[idx+1:])[0]
+            if num:
+                # print(f'    > Found digit SE: {num}')
+                numbers.append(int(num))
+    # print(f'    > {numbers}')
+    if len(numbers) == 2:
+        return numbers[0] * numbers[1]
+    else:
+        return None
+
+def find_gear_ratios(lines):
+    """Find the gear ratios for every gear
+
+    The input is a list of lines that contain digits and symbols. This function
+    finds all the gears (*'s) that are adjacent (orthogonally or diagonally) to
+    exactly two numbers and returns a list of the products of each pair of
+    numbers.
+    """
+    gear_ratios = []
+    for i, line in enumerate(lines):
+        # print(f'> {line}')
+        # Loop over the characters
+        for j, c in enumerate(line):
+            if c != '*':
+                # If we're not at a star (gear) we can move on
+                continue
+            else:
+                # Once we're at a star, we can check to see if it is a gear
+                # and, if so, what it's gear ratio is
+                g = compute_gear_ratio(
+                        j,
+                        line,
+                        lines[i-1] if i > 0 else None,
+                        lines[i+1] if i < len(lines)-1 else None,
+                        )
+                if g is not None:
+                    gear_ratios.append(g)
+    return gear_ratios
 
 def touches_symbol(start_idx, end_idx, line, prev_line, next_line):
     """Check if a substring touches a symbol
@@ -88,6 +195,8 @@ def main(filename):
     data = read_data(filename)
     part_numbers = extract_part_numbers(data)
     print(f'Sum of all part numbers: {sum(part_numbers)}')
+    gear_ratios = find_gear_ratios(data)
+    print(f'Sum of all gear ratios: {sum(gear_ratios)}')
     return data
 
 if __name__ == "__main__":
