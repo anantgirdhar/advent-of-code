@@ -9,7 +9,7 @@ if [ -z "$day" ]; then
   day=${last_file%%.py}
   day=${day##day}
   # Increment it by 1
-  day=$((day+1))
+  day=$(echo "$day+1" | bc)
 fi
 
 filename=$(printf 'day%02d' $day)
