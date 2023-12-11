@@ -4,22 +4,30 @@ import functools
 import re
 import sys
 
-CARDS = ['A', 'K', 'Q', 'J', 'T', '9', '8', '7', '6', '5', '4', '3', '2', '1']
+def get_card_value(card, jokers):
+    """Return the value of a card
 
-# Define the types of hands as compiled regular expressions that can be used
-# later
-# I believe that some of these require the cards in the hand to be sorted but
-# that may not really be true
-PATTERNS = [
-        FIVE_KIND := re.compile(r'(.)\1{4}'),
-        FOUR_KIND := re.compile(r'(.)\1{3}'),
-        FULL_HOUSE := re.compile(r'(.)\1(.)\2\2|(.)\3\3(.)\4'),
-        THREE_KIND := re.compile(r'(.)\1\1'),
-        TWO_PAIR := re.compile(r'.?(.)\1.?(.)\2.?'),
-        ONE_PAIR := re.compile(r'(.)\1'),
-]
+    This function takes in a card and returns its value. It also accepts an
+    optional argument to indicate whether or not jokers are used. Jokers have
+    the lowest value among any card.
+    """
+    match card:
+        case 'A':
+            return 14
+        case 'K':
+            return 13
+        case 'Q':
+            return 12
+        case 'J' if jokers:
+            return 1
+        case 'J':
+            return 11
+        case 'T':
+            return 10
+        case other:
+            return int(card)
 
-def get_hand_type(hand):
+def get_hand_type(hand, jokers):
     """Get the type of a hand
 
     This function returns the type of a hand as a number. There are five types
@@ -32,16 +40,35 @@ def get_hand_type(hand):
     - One pair (1)
     - High card (0)
     """
+    # Define the types of hands as compiled regular expressions that can be used
+    # later
+    # These do require the cards to be listed in value order
+    PATTERNS = [
+            FIVE_KIND := re.compile(r'(.)\1{4}'),
+            FOUR_KIND := re.compile(r'(.)\1{3}'),
+            FULL_HOUSE := re.compile(r'(.)\1(.)\2\2|(.)\3\3(.)\4'),
+            THREE_KIND := re.compile(r'(.)\1\1'),
+            TWO_PAIR := re.compile(r'.?(.)\1.?(.)\2.?'),
+            ONE_PAIR := re.compile(r'(.)\1'),
+    ]
+    PATTERNS_WITH_JOKERS = [
+            FIVE_KIND_WITH_JOKERS:= re.compile(r'(.)\1\1\1\1|J(.)\2\2\2|JJ(.)\3\3|JJJ(.)\4|JJJJ'),
+            FOUR_KIND_WITH_JOKERS:= re.compile(r'(.)\1{3}|J.*(.)\2{2}|JJ.*(.)\3|JJJ'),
+            FULL_HOUSE_WITH_JOKERS:= re.compile(r'(.)\1(.)\2\2|(.)\3\3(.)\4|J(.)\5(.)\6|JJ(.)(.)\7|JJ(.)\8(.)'),
+            THREE_KIND_WITH_JOKERS:= re.compile(r'(.)\1\1|J.*(.)\2|JJ'),
+            TWO_PAIR_WITH_JOKERS:= re.compile(r'.?(.)\1.?(.)\2.?|J.*(.)\3'),
+            ONE_PAIR_WITH_JOKERS:= re.compile(r'(.)\1|J'),
+    ]
     # Sort the cards
-    cards = ''.join(sorted(hand))
+    cards = ''.join(sorted(hand, key=lambda x: get_card_value(x, jokers)))
     # Now check against the patterns
-    for i, pattern in enumerate(PATTERNS):
+    for i, pattern in enumerate(PATTERNS_WITH_JOKERS if jokers else PATTERNS):
         if re.search(pattern, cards):
             return len(PATTERNS) - i
     # If nothing matches, we just have a high card
     return 0
 
-def compare_hands(h1, h2):
+def compare_hands(h1, h2, jokers):
     """Compare two hands
 
     This function takes in two hands (as strings) and compares them. It returns
@@ -53,24 +80,26 @@ def compare_hands(h1, h2):
     """
     # First check what type each hand is
     # To do this, sort the cards in the hand first
-    h1_type = get_hand_type(h1)
-    h2_type = get_hand_type(h2)
+    h1_type = get_hand_type(h1, jokers=jokers)
+    h2_type = get_hand_type(h2, jokers=jokers)
     if h1_type < h2_type:
         return -1
     elif h1_type > h2_type:
         return 1
     # Otherwise, the types are he same so we need to compare the individual cards
     for card1, card2 in zip(h1, h2):
-        if CARDS.index(card1) > CARDS.index(card2):
+        card1_value = get_card_value(card1, jokers)
+        card2_value = get_card_value(card2, jokers)
+        if card1_value < card2_value:
             # If the first card has higher index, it is a worse card and so has a
             # lower rank
             return -1
-        elif CARDS.index(card1) < CARDS.index(card2):
+        elif card1_value > card2_value:
             return 1
     # If all of that compares equal, then they're the same hand
     return 0
 
-def compute_winnings(hands, bids):
+def compute_winnings(hands, bids, jokers):
     """Compute the winnings from all hands
 
     This function takes a list of hands and ranks them. It then computes the
@@ -87,7 +116,7 @@ def compute_winnings(hands, bids):
         bid amount and the hand that it was bid on. It then "sorts" them in
         based on the hands.
         """
-        return compare_hands(bid1[1], bid2[1])
+        return compare_hands(bid1[1], bid2[1], jokers=jokers)
     sorted_bids, _ = zip(*sorted(
         zip(bids, hands),
         key=functools.cmp_to_key(_compare_bids_using_hands)
@@ -118,8 +147,10 @@ def read_data(filename):
 def main(filename):
     data = read_data(filename)
     hands, bids = parse_data(data)
-    winnings = compute_winnings(hands, bids)
-    print(f'The winnings are: {winnings}')
+    winnings = compute_winnings(hands, bids, jokers=False)
+    print(f'The winnings without jokers are: {winnings}')
+    winnings = compute_winnings(hands, bids, jokers=True)
+    print(f'The winnings with jokers are: {winnings}')
     return hands, bids
 
 if __name__ == "__main__":
