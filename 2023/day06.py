@@ -53,8 +53,23 @@ def compute_error_margin(race_times, record_distances):
     return math.prod([_ways_to_win(t, d)
                       for (t, d) in zip(race_times, record_distances)])
 
-def parse_data(data):
-    """Parse the data to make it usable"""
+def parse_data_ignoring_spaces(data):
+    """Parse the data ignoring all whitespaces
+
+    This function parses the data ignoring any whitespaces in the input. It
+    will, therefore, only return one time value and one distance value.
+    """
+    # Extract the times from the first line
+    time = int(data[0].split(':')[1].replace(' ', ''))
+    distance = int(data[1].split(':')[1].replace(' ', ''))
+    return time, distance
+
+def parse_data_with_spaces(data):
+    """Parse the data respecting all whitespaces
+
+    This function parses the data respecting all whitespace in the data. As
+    such, it will return a list of times and distances.
+    """
     times = []
     distances = []
     # Extract the times from the first line
@@ -82,9 +97,12 @@ def read_data(filename):
 
 def main(filename):
     data = read_data(filename)
-    times, distances = parse_data(data)
+    times, distances = parse_data_with_spaces(data)
     error_margin = compute_error_margin(times, distances)
     print(f'Error margin: {error_margin}')
+    new_time, new_distance = parse_data_ignoring_spaces(data)
+    error_margin = compute_error_margin([new_time, ], [new_distance, ])
+    print(f'New error margin: {error_margin}')
     return data
 
 if __name__ == "__main__":
