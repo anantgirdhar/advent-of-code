@@ -41,8 +41,12 @@ def find_lowest_location_number(seeds, mappings):
     the mappings to figure out what the lowest location number is. For a
     description of the mappings dict, see the seed2location function.
     """
-    locations = [seed2location(seed, mappings) for seed in seeds]
-    return min(locations)
+    lowest_location = None
+    for seed in seeds:
+        location = seed2location(seed, mappings)
+        if lowest_location is None or location < lowest_location:
+            lowest_location = location
+    return lowest_location
 
 def parse_data(data):
     """Parse the data to make it usable"""
