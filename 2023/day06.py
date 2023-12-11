@@ -3,6 +3,23 @@
 import math
 import sys
 
+def _ways_to_win_brute_force(race_time, record_distances):
+    """Return how many ways there are to win a race
+
+    This function does the same thing as _ways_to_win() but it uses a brute
+    force method. I'm just curious to know what the difference in speed is.
+    """
+    num_ways_to_win = 0
+    # t = 0 and t = T won't win so don't need to consider those
+    for holding_time in range(1, race_time):
+        # The speed is equal to the holding time
+        # The total time travelled is (race_time - holding_time)
+        # So we can compute the distance travelled
+        distance_travelled = (race_time - holding_time) * holding_time
+        if distance_travelled > record_distances:
+            num_ways_to_win += 1
+    return num_ways_to_win
+
 def _ways_to_win(race_time, record_distance):
     """Return how many ways there are to win a race
 
