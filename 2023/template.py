@@ -15,10 +15,9 @@ def read_data(filename):
 
 def main(filename):
     data = read_data(filename)
-    data = parse_data(data)
-    <++>
+    <++> = parse_data(data)
     return data
 
 if __name__ == "__main__":
     filename = sys.argv[1]
-    <++> = main(filename)
+    main(filename)
