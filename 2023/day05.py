@@ -48,6 +48,25 @@ def find_lowest_location_number(seeds, mappings):
             lowest_location = location
     return lowest_location
 
+def expand_seed_list(seed_ranges):
+    """Return a generator of seed numbers
+
+    When the originally provided list of seed numbers is considered to describe
+    ranges of seeds instead of just seed numbers, this function can be used to
+    expand that list into the full list of seed numbers. The input
+    (seed_ranges) should be a list of numbers where each pair of numbers
+    describes the start of a range and the length of the range.
+
+    This function returns a generator that can be iterated over to get all the
+    seed numbers in the expanded list.
+    """
+    seed_ranges = iter(seed_ranges)
+    for start in seed_ranges:
+        length = next(seed_ranges)
+        print(f'{start, length}')
+        for i in range(length):
+            yield start + i
+
 def parse_data(data):
     """Parse the data to make it usable"""
     # Create some variables to store the information extracted
@@ -96,7 +115,9 @@ def main(filename):
     data = read_data(filename)
     seeds, maps = parse_data(data)
     min_location = find_lowest_location_number(seeds, maps)
-    print(f'Lowest location number: {min_location}')
+    print(f'Lowest location number of seed list: {min_location}')
+    min_location = find_lowest_location_number(expand_seed_list(seeds), maps)
+    print(f'Lowest location number of expanded seed list: {min_location}')
     return seeds, maps
 
 if __name__ == "__main__":
