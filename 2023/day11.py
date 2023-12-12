@@ -15,11 +15,13 @@ def compute_total_pairwise_distances(galaxy_locations):
             distances.append(abs(g1x-g2x) + abs(g1y-g2y))
     return sum(distances)
 
-def expand_galaxy_locations(galaxy_locations, num_rows, num_cols):
+def expand_galaxy_locations(galaxy_locations, num_rows, num_cols, factor):
     """Return expanded galactic locations
 
     This function accepts the locations of the galaxies and returns their new
-    locations after the universe has expanded.
+    locations after the universe has expanded. The function also needs the
+    factor by which to expand the galaxy, i.e., how many rows and columns to
+    replace each empty row and column by.
     """
     # First find the rows and columns that don't have galaxies
     # These can be identified as the row and column numbers that do not appear
@@ -42,7 +44,7 @@ def expand_galaxy_locations(galaxy_locations, num_rows, num_cols):
         # Figure out how many rows and columns appear before it
         add_rows = len([r for r in rows_without_galaxies if r < row])
         add_columns = len([c for c in columns_without_galaxies if c < column])
-        new_locations.append((row + add_rows, column + add_columns))
+        new_locations.append((row + add_rows * (factor - 1), column + add_columns * (factor - 1)))
     return new_locations
 
 def locate_galaxies(image):
@@ -68,13 +70,16 @@ def read_data(filename):
 def main(filename):
     image = read_data(filename)
     galaxy_locations = locate_galaxies(image)
-    galaxy_locations = expand_galaxy_locations(
-            locate_galaxies(image),
-            num_rows=len(image),
-            num_cols=len(image[0]),
-            )
-    total_distance = compute_total_pairwise_distances(galaxy_locations)
-    print(f'Total of all pairwise distances: {total_distance}')
+    print('The following table shows the pairwise distances:')
+    for factor in (2, 10, 100, 1000000):
+        galaxy_locations_new = expand_galaxy_locations(
+                locate_galaxies(image),
+                num_rows=len(image),
+                num_cols=len(image[0]),
+                factor=factor,
+                )
+        total_distance = compute_total_pairwise_distances(galaxy_locations_new)
+        print(f'After expansion by a factor of {factor}: {total_distance}')
     return image
 
 if __name__ == "__main__":
