@@ -1,9 +1,11 @@
 """Day 12: Hot Springs"""
 
+import functools
 import itertools as it
 import re
 import sys
 
+@functools.cache
 def count_permutations_string_based(sequence, damage_counts):
     """Count the permutations for a sequence
 
@@ -214,15 +216,20 @@ def count_permutations_binary_based(sequence, damage_counts):
             counts += 1
     return counts
 
-def total_permutations(sequences, damage_counts):
+def total_permutations(sequences, damage_counts, folds=1):
     """Return the total permutations for all records
 
     This function accepts the sequences and corresponding damage counts. It
     then computes the number of possible arrangements for each record and
     returns the total number of arrangements across all the different records.
+
+    This function also accepts an optional folds parameter that signifies how
+    many times the records are folded over.
     """
     num_permutations = 0
     for sequence, counts in zip(sequences, damage_counts):
+        sequence = '?'.join([sequence] * folds)
+        counts = counts * folds
         num_permutations += count_permutations(sequence, counts)
     return num_permutations
 
@@ -246,8 +253,10 @@ def read_data(filename):
 def main(filename):
     data = read_data(filename)
     sequences, damage_counts = parse_data(data)
-    num_permutations = total_permutations(sequences, damage_counts)
-    print(f'Total number of permutations: {num_permutations}')
+    num_permutations = total_permutations(sequences, damage_counts, folds=1)
+    print(f'Total number of permutations with 1 fold: {num_permutations}')
+    num_permutations = total_permutations(sequences, damage_counts, folds=5)
+    print(f'Total number of permutations with 5 folds: {num_permutations}')
     return sequences, damage_counts
 
 if __name__ == "__main__":
