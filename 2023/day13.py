@@ -4,72 +4,63 @@ import sys
 
 import numpy as np
 
-def find_vertical_mirror(pattern):
-    """Return the location of a vertical mirror
-
-    This function accepts a pattern of ash and rocks (as a np.chararray) and
-    returns the location of a vertical mirror. The location returned is the
-    number of columns preceeding the mirror. If no mirror is found, it returns
-    None.
-    """
-    # Find the number of rows and columns in this pattern
-    _, C = pattern.shape
-    for i in range(C-1):
-        if np.all(pattern[:, i] == pattern[:, i + 1]):
-            # If two adjacent rows are the same, there is a mirror between
-            # them if all rows moving outwards are also the same
-            for j in range(i - 1, -1, -1):
-                if i + (i - j) + 1 == C:
-                    # We've reached the right boundary and confirmed the mirror
-                    return i + 1
-                if not np.all(pattern[:, j] == pattern[:, i + (i - j) + 1]):
-                    # This is not a mirror
-                    break
-            else:
-                return i + 1
-    # No mirror found
-    return None
-
-def find_horizontal_mirror(pattern):
+def find_horizontal_mirror(pattern, num_smudges=0):
     """Return the location of a horizontal mirror
 
     This function accepts a pattern of ash and rocks (as a np.chararray) and
     returns the location of a horizontal mirror. The location returned is the
     number of columns preceeding the mirror. If no mirror is found, it returns
     None.
+
+    It also accepts an optional parameter describing how many smudges are
+    allowed.
     """
     # Find the number of rows and columns in this pattern
     R, _ = pattern.shape
     for i in range(R-1):
-        if np.all(pattern[i, :] == pattern[i + 1, :]):
+        if (total_diffs := sum(pattern[i] != pattern[i + 1])) <= num_smudges:
             # If two adjacent rows are the same, there is a mirror between
-            # them if all rows moving outwards are also the same
+            # them if all rows moving outwards have exactly num_smudges in
+            # total
             for j in range(i - 1, -1, -1):
                 if i + (i - j) + 1 == R:
-                    # We've reached the lower boundary and confirmed the mirror
-                    return i + 1
-                elif not np.all(pattern[j, :] == pattern[i + (i - j) + 1, :]):
-                    # This is not a mirror
+                    # We've reached the lower boundary
+                    if total_diffs == num_smudges:
+                        return i + 1
+                    else:
+                        # Not a valid mirror so try again
+                        break
+                total_diffs += sum(pattern[j] != pattern[i + (i - j) + 1])
+                if total_diffs > num_smudges:
+                    # This is not a valid mirror
                     break
             else:
-                return i + 1
+                if total_diffs == num_smudges:
+                    return i + 1
+                else:
+                    # Not a valid mirror so try again
+                    pass
     # No mirror found
     return None
 
-def summarize(maps):
+def summarize(maps, num_smudges):
     """Return a summarized value of all the maps
 
     This function accepts a list of maps and returns a "summarized" value that
     describes this combination of maps. This function finds the location of the
     mirror in every map and then uses these location values to compute the
     "summary number".
+
+    It also accepts a number of smudges argument describing how many smudges
+    can be seen in the mirror.
     """
     summary_number = 0
     for pattern in maps:
-        if (location := find_horizontal_mirror(pattern)):
+        if (location := find_horizontal_mirror(pattern, num_smudges)):
             summary_number += 100 * location
         else:
-            location = find_vertical_mirror(pattern)
+            # A vertical mirror is a horizontal mirror in the transpose
+            location = find_horizontal_mirror(pattern.T, num_smudges)
             summary_number += location
     return summary_number
 
@@ -101,8 +92,10 @@ def read_data(filename):
 def main(filename):
     data = read_data(filename)
     maps = parse_data(data)
-    summary_number = summarize(maps)
-    print(f'Summary number: {summary_number}')
+    summary_number = summarize(maps, num_smudges=0)
+    print(f'Summary number with no smudges: {summary_number}')
+    summary_number = summarize(maps, num_smudges=1)
+    print(f'Summary number with one smudge: {summary_number}')
     return maps
 
 if __name__ == "__main__":
